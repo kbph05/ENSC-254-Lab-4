@@ -40,8 +40,11 @@ void print_result(result r) {
  *          c) record an eviction status, the victim block address, and the inserted block
  *             address in the return "result" struct. Update miss_count and eviction_count.
  */
+
+// Student 1
 result operateCache(const unsigned long long address, Cache *cache) {
   /* YOUR CODE HERE */
+
   result r;
   return r;
 }
@@ -49,27 +52,32 @@ result operateCache(const unsigned long long address, Cache *cache) {
 // HELPER FUNCTIONS USEFUL FOR IMPLEMENTING THE CACHE
 // Given an address, return the block (aligned) address,
 // i.e., byte offset bits are cleared to 0
-unsigned long long address_to_block(const unsigned long long address,
-                                const Cache *cache) {
+
+// Student 1
+unsigned long long address_to_block(const unsigned long long address, const Cache *cache) {
   /* YOUR CODE HERE */
   return 0;
 }
 
 // Return the cache tag of an address
-unsigned long long cache_tag(const unsigned long long address,
-                             const Cache *cache) {
+
+// Student 2
+unsigned long long cache_tag(const unsigned long long address, const Cache *cache) {
   /* YOUR CODE HERE */
   return 0;
 }
 
 // Return the cache set index of the address
-unsigned long long cache_set(const unsigned long long address,
-                             const Cache *cache) {
+
+// Student 1
+unsigned long long cache_set(const unsigned long long address, const Cache *cache) {
   /* YOUR CODE HERE */
   return 0;
 }
 
 // Check if the address is found in the cache. If so, return true. else return false.
+
+// Student 2
 bool probe_cache(const unsigned long long address, const Cache *cache) {
   /* YOUR CODE HERE */
   return false;
@@ -77,6 +85,9 @@ bool probe_cache(const unsigned long long address, const Cache *cache) {
 
 // Access address in cache. Called only if probe is successful.
 // Update the LRU (least recently used) or LFU (least frequently used) counters.
+
+// Student 1 do LRU
+// Student 2 do LFU
 void hit_cacheline(const unsigned long long address, Cache *cache){
   /* YOUR CODE HERE */
  }
@@ -91,6 +102,9 @@ void hit_cacheline(const unsigned long long address, Cache *cache){
  *     3) it returns true.
  * Otherwise, it returns false.  
  */ 
+
+// Student 1 - LRU state
+// Student 2 - LFU state
 bool insert_cacheline(const unsigned long long address, Cache *cache) {
   /* YOUR CODE HERE */
    return false;
@@ -99,8 +113,10 @@ bool insert_cacheline(const unsigned long long address, Cache *cache) {
 // If there is no empty cacheline, this method figures out which cacheline to replace
 // depending on the cache replacement policy (LRU and LFU). It returns the block address
 // of the victim cacheline; note we no longer have access to the full address of the victim
-unsigned long long victim_cacheline(const unsigned long long address,
-                                const Cache *cache) {
+
+// Student 1 - implement LRU section
+// Student 2 - implement LFU section
+unsigned long long victim_cacheline(const unsigned long long address, const Cache *cache) {
   /* YOUR CODE HERE */
    return 0;
 }
@@ -110,19 +126,24 @@ unsigned long long victim_cacheline(const unsigned long long address,
  * Remember to update the new cache line's lru_clock based on the global lru_clock in the cache
  * set and initiate the cache line's access_counter.
  */
-void replace_cacheline(const unsigned long long victim_block_addr,
-		       const unsigned long long insert_addr, Cache *cache) {
+// Student 1 - update LRU clock
+// Student 2 - implement, update LFU clock
+void replace_cacheline(const unsigned long long victim_block_addr, const unsigned long long insert_addr, Cache *cache) {
   /* YOUR CODE HERE */
 }
 
 // allocate the memory space for the cache with the given cache parameters
 // and initialize the cache sets and lines.
-// Initialize the cache name to the given name 
+// Initialize the cache name to the given name
+
+// Student 1 - allocation for cache sets and lines
 void cacheSetUp(Cache *cache, char *name) {
   /* YOUR CODE HERE */
 }
 
 // deallocate the memory space for the cache
+
+// Student 2
 void deallocate(Cache *cache) {
   /* YOUR CODE HERE */
 }
