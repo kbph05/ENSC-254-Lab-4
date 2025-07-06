@@ -43,7 +43,7 @@ void print_result(result r) {
 
 // Student 1
 result operateCache(const unsigned long long address, Cache *cache) {
-  // cache.set->lru_clock += 1; idk if needed
+  set->lru_clock++; //global lru clock
   if (probe_cache(address, cache)) { // If cache is found and to be true, updates hit_cacheline function, returns hit status and upcounts hit_count
     hit_cacheline(address, cache);
     r.status = 1;
@@ -106,8 +106,17 @@ bool probe_cache(const unsigned long long address, const Cache *cache) {
 // Student 2 do LFU
 void hit_cacheline(const unsigned long long address, Cache *cache){
   Set *set = &cache->sets[cache_set(address, cache)];
-  set->lru_clock += 1;
-  set->lfu += 1;
+  unsigned long long localTag = cache_tag(address, cache);
+
+  for (int i = 0; i < cache->linesPerSet; i++) {
+    Line *line = &set->lines[i];
+    if (line->valid && line->tag = localTag) {
+      line->lru_clock = set->lru_clock;
+      line->access_counter++;
+      return;
+    }
+  }
+  return;
  }
 
 /* This function is only called if probe_cache returns false, i.e., the address is
@@ -135,8 +144,16 @@ bool insert_cacheline(const unsigned long long address, Cache *cache) {
 // Student 1 - implement LRU section
 // Student 2 - implement LFU section
 unsigned long long victim_cacheline(const unsigned long long address, const Cache *cache) {
-  /* YOUR CODE HERE */
-   return 0;
+  if (line.lru_clock < line.access_counter) {
+    //LRU Policy
+
+  } else if (line.lru_clock > line.access_counter) {
+    //LFU Policy
+
+  } else {
+    // idk
+  }
+  return 0;
 }
 
 /* Replace the victim cacheline with the new address to insert. Note for the victim cachline,
@@ -156,7 +173,7 @@ void replace_cacheline(const unsigned long long victim_block_addr, const unsigne
 
 // Student 1 - allocation for cache sets and lines
 void cacheSetUp(Cache *cache, char *name) {
-  
+
   cache->name = &name;
 }
 
