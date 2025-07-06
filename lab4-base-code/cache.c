@@ -43,9 +43,26 @@ void print_result(result r) {
 
 // Student 1
 result operateCache(const unsigned long long address, Cache *cache) {
-  /* YOUR CODE HERE */
-
-  result r;
+  set->lru_clock += 1;
+  if (probe_cache(address, cache)) { // If cache is found and to be true, updates hit_cacheline function, returns hit status and upcounts hit_count
+    hit_cacheline(address, cache);
+    r.status = 1;
+    cache->hit_count += 1;
+  else { // If false, tries to find an empty cache line in the cache set
+    if (insert_cacheline(address, cache)) {
+      r.status = 0;
+      cache->miss_count += 1;
+    else {
+      r.victim_block_addr = address; // record victim block address
+      replace_cacheline(address, victim_cacheline(address, cache), cache); // replaces block address
+      cache->miss_count += 1; //ups miss count
+      cache->eviction_count += 1;  // ups eviction count
+      r.status = 2; //record eviction status
+      r.insert_block_addr = address; //records insert block address
+        }
+      }
+    }
+  }
   return r;
 }
 
@@ -55,8 +72,7 @@ result operateCache(const unsigned long long address, Cache *cache) {
 
 // Student 1
 unsigned long long address_to_block(const unsigned long long address, const Cache *cache) {
-  /* YOUR CODE HERE */
-  return 0;
+  return ((address >> cache->blockBits) << cache->blockBits);
 }
 
 // Return the cache tag of an address
@@ -71,8 +87,7 @@ unsigned long long cache_tag(const unsigned long long address, const Cache *cach
 
 // Student 1
 unsigned long long cache_set(const unsigned long long address, const Cache *cache) {
-  /* YOUR CODE HERE */
-  return 0;
+  return (cache->setBits);
 }
 
 // Check if the address is found in the cache. If so, return true. else return false.
