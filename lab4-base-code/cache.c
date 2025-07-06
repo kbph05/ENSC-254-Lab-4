@@ -133,8 +133,24 @@ void hit_cacheline(const unsigned long long address, Cache *cache){
 // Student 1 - LRU state
 // Student 2 - LFU state
 bool insert_cacheline(const unsigned long long address, Cache *cache) {
+  unsigned long long localTag = cache_tag(address, cache);
+  unsigned long long localsetIndx = cache_set(address, cache);
+  unsigned long long localBlock = address_to_block(address, cache);
+  Set *set = cache->sets[localsetIndx];
 
-   return false;
+  for (int i = 0; i < cache->linesPerSet; i++) {
+    Line *line = sets->line[i];
+    if (!(lines->valid)) {
+      line->block_addr = localBlock;
+      line->valid = true;
+      line->tag = localTag;
+      line->lru_clock = set->lru_clock
+      line->access_counter += 1;
+
+      return true;
+    }
+  }
+  return false;
 }
 
 // If there is no empty cacheline, this method figures out which cacheline to replace
@@ -173,8 +189,30 @@ void replace_cacheline(const unsigned long long victim_block_addr, const unsigne
 
 // Student 1 - allocation for cache sets and lines
 void cacheSetUp(Cache *cache, char *name) {
+  cache->hit_count = 0;
+  cache->miss_count = 0;
+  cache->eviction_count = 0;
+  int Sets = 1 - cache->setBits;
 
-  cache->name = &name;
+  cache->sets = malloc(sizeof(Set) * Sets); //Allocate the memory for the sets
+
+  for (int i = 0; i < Sets; i++) {
+    Set *set = &cache->sets[i];
+    set->lines = malloc(sizeof(Line) * cache->linesPerSet); //Allocate memory for each lines
+
+    set->lru_clock = 0;
+
+    for (int j = 0; j < cache->linesPerSet; j++) {
+      Line *line = &set->lines[j];
+      line->valid = false;
+      line->tag = 0;
+      line->block_addr = 0;
+      line->lru_clock = 0;
+      line->access_counter = 0;
+    }
+  }
+
+  cache->name = name;
 }
 
 // deallocate the memory space for the cache
