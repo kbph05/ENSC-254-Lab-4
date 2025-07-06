@@ -43,7 +43,7 @@ void print_result(result r) {
 
 // Student 1
 result operateCache(const unsigned long long address, Cache *cache) {
-  set->lru_clock += 1;
+  // cache.set->lru_clock += 1; idk if needed
   if (probe_cache(address, cache)) { // If cache is found and to be true, updates hit_cacheline function, returns hit status and upcounts hit_count
     hit_cacheline(address, cache);
     r.status = 1;
@@ -87,7 +87,8 @@ unsigned long long cache_tag(const unsigned long long address, const Cache *cach
 
 // Student 1
 unsigned long long cache_set(const unsigned long long address, const Cache *cache) {
-  return (cache->setBits);
+  int mask = (1 << cache->setBits) - 1; //set out a mask with 2^s 1's, such that we can make 2^s spots
+  return((address >> cache->blockBits) & mask); //Move the offset, then mask the next s bits
 }
 
 // Check if the address is found in the cache. If so, return true. else return false.
@@ -104,7 +105,9 @@ bool probe_cache(const unsigned long long address, const Cache *cache) {
 // Student 1 do LRU
 // Student 2 do LFU
 void hit_cacheline(const unsigned long long address, Cache *cache){
-  /* YOUR CODE HERE */
+  Set *set = &cache->sets[cache_set(address, cache)];
+  set->lru_clock += 1;
+  set->lfu += 1;
  }
 
 /* This function is only called if probe_cache returns false, i.e., the address is
@@ -121,7 +124,7 @@ void hit_cacheline(const unsigned long long address, Cache *cache){
 // Student 1 - LRU state
 // Student 2 - LFU state
 bool insert_cacheline(const unsigned long long address, Cache *cache) {
-  /* YOUR CODE HERE */
+
    return false;
 }
 
@@ -153,7 +156,8 @@ void replace_cacheline(const unsigned long long victim_block_addr, const unsigne
 
 // Student 1 - allocation for cache sets and lines
 void cacheSetUp(Cache *cache, char *name) {
-  /* YOUR CODE HERE */
+  
+  cache->name = &name;
 }
 
 // deallocate the memory space for the cache
