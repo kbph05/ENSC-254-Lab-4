@@ -43,7 +43,7 @@ void print_result(result r) {
 
 // Student 1
 result operateCache(const unsigned long long address, Cache *cache) {
-  cache->sets->lru_clock++; //global lru clock
+  cache->sets->lru_clock += 1; //global lru clock
   result r; // result status of hit or miss (i guess they dont miss huh...sorry ill delete this later)
   if (probe_cache(address, cache)) { // If cache is found and to be true, updates hit_cacheline function, returns hit status and upcounts hit_count
     hit_cacheline(address, cache);
@@ -56,7 +56,7 @@ result operateCache(const unsigned long long address, Cache *cache) {
       cache->miss_count += 1;
     }
     else {
-      r.victim_block_addr = address; // record victim block address
+      r.victim_block_addr = address_to_block(address, cache); // record victim block address
       replace_cacheline(address, victim_cacheline(address, cache), cache); // replaces block address
       cache->miss_count += 1; //ups miss count
       cache->eviction_count += 1;  // ups eviction count
@@ -72,36 +72,36 @@ result operateCache(const unsigned long long address, Cache *cache) {
 // i.e., byte offset bits are cleared to 0
 // Student 1
 unsigned long long address_to_block(const unsigned long long address, const Cache *cache) {
-  return ((address >> cache->blockBits) << cache->blockBits);
+  //return ((address << cache->blockBits) >> cache->blockBits);
+  return (address & ((1 << cache->blockBits) - 1)); // return address with a mask at the last b (blockBits) bits
 }
 
 // Return the cache tag of an address
 // Student 2
 unsigned long long cache_tag(const unsigned long long address, const Cache *cache) {
-  /* YOUR CODE HERE */
-  // get value of the size of the line - cache->setBits;
-  // get the offset value of the cache tag - cache->blockBits
-  // bitmask the bits so that only the tag of the cache is return
-  int setSize = cache->setBits;
-  int blockSize = cache->blockBits;
-  return address >> (setSize + blockSize) & ((unsigned long long)0xFFFFFFFFFFFFFFFF >> (64 - setSize + blockSize));
+  return (address >> (cache->blockBits + cache->setBits));
 }
 
 // Return the cache set index of the address
 // Student 2
 unsigned long long cache_set(const unsigned long long address, const Cache *cache) {
-  int mask = (1 << cache->setBits) - 1; //set out a mask with 2^s 1's, such that we can make 2^s spots
-  return((address >> cache->blockBits) & mask); //Move the offset, then mask the next s bits
+  return ((address >> cache->blockBits) & ((1 << cache->setBits) - 1)); // return address sifted right by the blockBits amount and then masked at the last s bits
 }
 
 // Check if the address is found in the cache. If so, return true. else return false.
 // Student 2
 bool probe_cache(const unsigned long long address, const Cache *cache) {
-  /* YOUR CODE HERE */
+  Set *set = &cache->sets[cache_set(address, cache)]; // get the set that the address is in
+
   for (int i = 0; i < cache->linesPerSet; i++) {
-    if (address == cache->sets->lines[i].block_addr) return true;
+    Line *line = &set->lines[i];
+    if (address_to_block(address, cache) == line->block_addr) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  return false;
 }
 
 // Access address in cache. Called only if probe is successful.
@@ -114,7 +114,7 @@ void hit_cacheline(const unsigned long long address, Cache *cache){
 
   for (int i = 0; i < cache->linesPerSet; i++) {
     Line *line = &set->lines[i];
-    if (line->valid && line->tag = localTag) {
+    if (line->valid && (line->tag == localTag)) {
       line->lru_clock = set->lru_clock;
       line->access_counter++;
       return;
@@ -142,13 +142,13 @@ bool insert_cacheline(const unsigned long long address, Cache *cache) {
   Set set = cache->sets[localsetIndx];
 
   for (int i = 0; i < cache->linesPerSet; i++) {
-    Line line = cache->sets->lines[i];
-    if (!(line.valid)) {
-      line.block_addr = localBlock;
-      line.valid = true; 
-      line.tag = localTag;
-      line.lru_clock = set.lru_clock;
-      line.access_counter += 1;
+    Line *line = &cache->sets->lines[i];
+    if (!(line->valid)) {
+      line->block_addr = localBlock;
+      line->valid = true; 
+      line->tag = localTag;
+      line->lru_clock = set.lru_clock;
+      line->access_counter += 1;
       return true;
     }
   }
@@ -161,16 +161,30 @@ bool insert_cacheline(const unsigned long long address, Cache *cache) {
 
 // Student 2
 unsigned long long victim_cacheline(const unsigned long long address, const Cache *cache) {
-  if (cache->sets->lines->lru_clock < cache->sets->lines->access_counter) {
-    //LRU Policy
-    
-  } else if (cache->sets->lines->lru_clock > cache->sets->lines->access_counter) {
-    //LFU Policy
 
-  } else {
-    // idk
-    printf("%s", "");
+  Line *line;
+  for (int i = 0; i < cache->setBits; i++) {
+    for (int j = 0; j < cache->linesPerSet; j++) {
+      line = &cache->sets[i].lines[j]; // access the block address in the cache line
+      if (line->lru_clock < line->access_counter) {
+        return line->block_addr;
+      }
+      else if (line->lru_clock > line->access_counter) {
+        return line->block_addr;
+      }
+    }
   }
+
+  // if (cache->sets->lines->lru_clock < cache->sets->lines->access_counter) {
+  //   //LRU Policy
+    
+  // } else if (cache->sets->lines->lru_clock > cache->sets->lines->access_counter) {
+  //   //LFU Policy
+
+  // } else {
+  //   // idk
+  //   printf("%s", "");
+  // }
   return 0;
 }
 
@@ -182,14 +196,19 @@ unsigned long long victim_cacheline(const unsigned long long address, const Cach
 // Student 2
 void replace_cacheline(const unsigned long long victim_block_addr, const unsigned long long insert_addr, Cache *cache) {
   /* YOUR CODE HERE */
-  unsigned long long line;
-  for (int i = 0; i < cache->linesPerSet; i++)
-    line = cache->sets->lines[i].block_addr; // access the block address in the cache line
-    if (cache->sets->lines->block_addr = victim_block_addr) {
-      cache->sets->lines->block_addr = insert_addr;
-      cache->sets->lines->lru_clock = cache->sets->lru_clock;
-      cache->sets->lines->access_counter = 0;
+  
+  Line *line;
+  for (int i = 0; i < cache->setBits; i++) {
+    for (int j = 0; j < cache->linesPerSet; j++) {
+    line = &cache->sets[i].lines[j]; // access the block address in the cache line
+    if (line->block_addr == victim_block_addr) {
+      line->block_addr = address_to_block(insert_addr, cache);
+      line->lru_clock = cache->sets->lru_clock;
+      line->tag = cache_tag(insert_addr, cache);
+      line->access_counter+= 1;
     } 
+  }
+}
 }
 
 // allocate the memory space for the cache with the given cache parameters
@@ -201,11 +220,12 @@ void cacheSetUp(Cache *cache, char *name) {
   cache->hit_count = 0;
   cache->miss_count = 0;
   cache->eviction_count = 0;
-  int Sets = 1 - cache->setBits;
+  int s = 1 << cache->setBits;
 
-  cache->sets = malloc(sizeof(Set) * Sets); //Allocate the memory for the sets
 
-  for (int i = 0; i < Sets; i++) {
+  cache->sets = malloc(sizeof(Set) * s); //Allocate the memory for the sets
+
+  for (int i = 0; i < s; i++) {
     Set *set = &cache->sets[i];
     set->lines = malloc(sizeof(Line) * cache->linesPerSet); //Allocate memory for each lines
 
@@ -229,7 +249,7 @@ void cacheSetUp(Cache *cache, char *name) {
 // Student 2
 void deallocate(Cache *cache) {
   /* YOUR CODE HERE */
-  free(cache->sets->lines);
+  free(cache->sets);
 }
 
 // print out summary stats for the cache
