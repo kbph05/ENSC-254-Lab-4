@@ -212,6 +212,8 @@ void cacheSetUp(Cache *cache, char *name) {
   cache->eviction_count = 0;
   int s = 1 << cache->setBits;
 
+  int s = 1 << cache->setBits;
+
 
   cache->sets = malloc(sizeof(Set) * s); //Allocate the memory for the sets
 
