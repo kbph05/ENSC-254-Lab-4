@@ -47,23 +47,28 @@ result operateCache(const unsigned long long address, Cache *cache) {
   set->lru_clock += 1; //global lru clock
   result r; // result status of hit or miss
 
-  if (probe_cache(address, cache)) { // If cache is found and to be true, updates hit_cacheline function, returns hit status and upcounts hit_count
+  if (probe_cache(address, cache) == true) { // If cache is found and to be true, updates hit_cacheline function, returns hit status and upcounts hit_count
     hit_cacheline(address, cache);
     r.status = CACHE_HIT;
     cache->hit_count += 1;
+    return r;
   }
   else { // If false, tries to find an empty cache line in the cache set
-    if (insert_cacheline(address, cache)) { // if insert in cacheline is false, status is cache_miss and add 1 to miss count
+    if (insert_cacheline(address, cache) == true) { // if insert in cacheline is true, status is cache_miss and add 1 to miss count
       r.status = CACHE_MISS;
-      cache->miss_count += 1;
       r.insert_block_addr = address_to_block(address, cache);
+      cache->miss_count += 1;
+      return r;
     }
     else {
+      unsigned long long victim = victim_cacheline(address, cache);
+      replace_cacheline(victim, address, cache); // replaces block address
       r.status = CACHE_EVICT; // record eviction status
-      replace_cacheline(address, victim_cacheline(address, cache), cache); // replaces block address
-      cache->eviction_count += 1;  // adds 1 eviction count
-      r.victim_block_addr = victim_cacheline(address, cache); // record victim block address
+      r.victim_block_addr = victim;
       r.insert_block_addr = address_to_block(address, cache);
+      cache->eviction_count += 1;  // adds 1 eviction count
+      cache->miss_count += 1;
+      return r;
     }
   }
   return r;
@@ -80,7 +85,7 @@ unsigned long long address_to_block(const unsigned long long address, const Cach
 // Return the cache tag of an address
 // Student 2
 unsigned long long cache_tag(const unsigned long long address, const Cache *cache) {
-  return (address >> (cache->blockBits + cache->setBits));
+  return ((address >> (cache->blockBits + cache->setBits)));
 }
 
 // Return the cache set index of the address
@@ -112,9 +117,9 @@ void hit_cacheline(const unsigned long long address, Cache *cache){
 
   for (int i = 0; i < cache->linesPerSet; i++) {
     Line *line = &set->lines[i];
-    if (line->valid && (line->tag == localTag)) {
+    if (line->valid && (line->tag == cache_tag(address, cache))) {
       line->lru_clock = set->lru_clock;
-      line->access_counter++;
+      line->access_counter += 1;
       return;
     }
   }
@@ -141,12 +146,12 @@ bool insert_cacheline(const unsigned long long address, Cache *cache) {
 
   for (int i = 0; i < cache->linesPerSet; i++) {
     Line *line = &set->lines[i];
-    if (!(line->valid)) {
-      line->block_addr = localBlock;
-      line->valid = true; 
-      line->tag = localTag;
-      line->lru_clock = set->lru_clock;
-      line->access_counter = 1;
+    if (!(set->lines[i].valid)) {
+      set->lines[i].block_addr = localBlock;
+      set->lines[i].valid = true; 
+      set->lines[i].tag = localTag;
+      set->lines[i].lru_clock = set->lru_clock;
+      set->lines[i].access_counter = 1;
       return true;
     }
   }
@@ -200,11 +205,12 @@ void replace_cacheline(const unsigned long long victim_block_addr, const unsigne
   Set *set = &cache->sets[cache_set(insert_addr, cache)];
 
   for (int i = 0; i < cache->linesPerSet; i++) {
-    if (set->lines[i].block_addr == victim_block_addr) {
+    if ((set->lines[i].valid) && set->lines[i].block_addr == victim_block_addr) {
       set->lines[i].block_addr = address_to_block(insert_addr, cache);
       set->lines[i].lru_clock = set->lru_clock;
       set->lines[i].tag = cache_tag(insert_addr, cache);
       set->lines[i].access_counter = 1; // re init the lfu access_counter
+      break;
     } 
   }
 }
