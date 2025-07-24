@@ -1,5 +1,3 @@
--s 6
--E 1
--F
-
-Change this if any LRU hit count is more (this is the highest hit found for LFU)
+-s 1
+-E 32
+-L
